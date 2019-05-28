@@ -8,5 +8,5 @@ func main() {
 }
 
 func displayHello() string {
-	return "Hello World"
+	return "Hello Go"
 }
