@@ -8,5 +8,5 @@ import (
 
 func TestDisplayHello(t *testing.T) {
 	str := displayHello()
-	assert.Equal(t, str, "Hello World", "Expected Hello World")
+	assert.Equal(t, str, "Hello Go", "Expected Hello World")
 }
