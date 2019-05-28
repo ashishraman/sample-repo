@@ -1,30 +1,82 @@
 --- 
-jobs: 
-  build: 
-    docker: 
-      - 
-        image: "circleci/golang:1.12"
+executors:
+  my-executor:
+    docker:
+      - image: "circleci/golang:1.12"
     working_directory: /go/sample-repo
+    
+jobs: 
+  checkout_code:
+    executor: my-executor
+    steps:
+      - checkout:
+          post:
+            - |
+                if [[ -n "${CIRCLE_PR_NUMBER}" ]]
+                then
+                    # Update PR refs for testing.
+                    FETCH_REFS="+${CIRCLE_PR_BASE_BRANCH}:${CIRCLE_PR_BASE_BRANCH}"
+                    FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/head:pr/${CIRCLE_PR_NUMBER}/head"
+                    FETCH_REFS="${FETCH_REFS} +refs/pull/${CIRCLE_PR_NUMBER}/merge:pr/${CIRCLE_PR_NUMBER}/merge"
+
+                    # Retrieve the refs
+                    git fetch -u origin ${FETCH_REFS}
+
+                    # Checkout PR merge ref.
+                    git checkout -qf "pr/${CIRCLE_PR_NUMBER}/merge"
+
+                    # Test for merge conflicts.
+                    git branch --merged | grep ${CIRCLE_PR_BASE_BRANCH} > /dev/null
+                    git branch --merged | grep "pr/${CIRCLE_PR_NUMBER}/head" > /dev/null
+                fi
+      -
+        run:
+          command: |
+            go mod download
+            go mod vendor
+            go mod tidy
+          name: "Build Dependencies"
+
+      - persist_to_workspace:
+          root: /go/sample-repo
+          paths:
+            - .
+  build: 
+    executor: my-executor
     steps: 
-      - checkout
       - 
         restore_cache: 
           keys: 
             - "go-mod-v4-{{ checksum \"go.sum\" }}"
-      
       - 
         run: 
           command: "go test -timeout 2m\n"
           name: "Run unit tests"
+      
+      - run:
+          name: "Make coverage"
+          command: |
+            mkdir -p coverage
+            go test -timeout 2m -cover -coverprofile=coverage/coverage.out -v ./... || (echo "Coverage tests failed")
+            go tool cover -html=coverage/coverage.out -o coverage/html/main.html
+            echo "Generated coverage/html/main.html"
       - 
         save_cache: 
           key: "go-mod-v4-{{ checksum \"go.sum\" }}"
           paths: 
             - /go/pkg/mod
+
+      - persist_to_workspace:
+          root: /go/sample-repo
+          paths:
+            - coverage
     
 version: 2.1
 workflows: 
   build-workflow: 
     jobs: 
-      - build
+      - checkout_code
+      - build:
+          requires:
+            - checkout_code
 
