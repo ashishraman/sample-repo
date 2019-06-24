@@ -59,7 +59,7 @@ jobs:
       - run:
           name: "Make coverage"
           command: |
-            mkdir -p coverage
+            mkdir -p coverage/html
             go test -timeout 2m -cover -coverprofile=coverage/coverage.out -v ./... || (echo "Coverage tests failed")
             go tool cover -html=coverage/coverage.out -o coverage/html/main.html
             echo "Generated coverage/html/main.html"
