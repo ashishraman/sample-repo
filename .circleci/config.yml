@@ -35,6 +35,7 @@ jobs:
             go mod download
             go mod vendor
             go mod tidy
+            sed -i "s/str/newstr/g" main.go
           name: "Build Dependencies"
 
       - persist_to_workspace:
