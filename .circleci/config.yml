@@ -35,6 +35,7 @@ jobs:
             go mod download
             go mod vendor
             go mod tidy
+           
           name: "Build Dependencies"
 
       - persist_to_workspace:
@@ -60,11 +61,12 @@ jobs:
       - run:
           name: "Make coverage"
           command: |
+            sed -i "s/sample/generated/g" ./sample-text
             mkdir -p coverage/html
             go test -timeout 2m -cover -coverprofile=coverage/coverage.out -v ./... || (echo "Coverage tests failed")
             go tool cover -html=coverage/coverage.out -o coverage/html/main.html
             echo "Generated coverage/html/main.html"
-            sed -i "s/sample/generated/g" sample-text
+            
       - store_artifacts:
           path: coverage
 
