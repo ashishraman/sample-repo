@@ -41,6 +41,12 @@ jobs:
           root: /go/sample-repo
           paths:
             - .
+      - 
+        save_cache: 
+          key: "go-mod-v4-{{ checksum \"go.sum\" }}"
+          paths: 
+            - /go/pkg/mod
+
   build: 
     executor: my-executor
     steps:
@@ -50,11 +56,7 @@ jobs:
         restore_cache: 
           keys: 
             - "go-mod-v4-{{ checksum \"go.sum\" }}"
-      - 
-        run: 
-          command: "go test -timeout 2m\n"
-          name: "Run unit tests"
-      
+           
       - run:
           name: "Make coverage"
           command: |
@@ -62,14 +64,25 @@ jobs:
             go test -timeout 2m -cover -coverprofile=coverage/coverage.out -v ./... || (echo "Coverage tests failed")
             go tool cover -html=coverage/coverage.out -o coverage/html/main.html
             echo "Generated coverage/html/main.html"
+            sed -i "s/sample/generated/g" sample-text
+      - store_artifacts:
+          path: coverage
+
       - 
         save_cache: 
           key: "go-mod-v4-{{ checksum \"go.sum\" }}"
           paths: 
             - /go/pkg/mod
-
-      - store_artifacts:
-          path: coverage
+    
+  echo:
+    executor: my-executor
+    steps:
+      - attach_workspace:
+          at: /go/sample-repo 
+      - run:
+          name: "Make coverage"
+          command: |
+            cat sample-text
     
 version: 2.1
 workflows: 
@@ -79,4 +92,7 @@ workflows:
       - build:
           requires:
             - checkout_code
+      - echo:
+          requires:
+            - build
 
