@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/master/assert"
 )
 
 func TestDisplayHello(t *testing.T) {
